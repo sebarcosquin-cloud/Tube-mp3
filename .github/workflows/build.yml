@@ -7,26 +7,48 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      
       - name: Descomprimir zip
         run: |
-          ZIP=$(find . -name "*.zip" | head -1)
-          unzip -o "$ZIP"
-          rm "$ZIP"
-          for d in tubemp3* */; do
-            if [ -f "$d/build.gradle.kts" ] || [ -f "$d/app/build.gradle" ] || [ -f "$d/app/build.gradle.kts" ]; then
-              mv "$d"/* . 2>/dev/null || true
-              break
-            fi
-          done
+          set -x
+          ZIP=$(find . -name "*.zip" -print | head -1)
+          echo "ZIP: $ZIP"
+          rm -rf _src
+          mkdir _src
+          unzip -o "$ZIP" -d _src
+          echo "Contenido de _src:"
+          ls -R _src | head -n 100
+          # Buscar donde está gradlew
+          GW=$(find _src -name "gradlew" -type f | head -1)
+          echo "gradlew en: $GW"
+          if [ -z "$GW" ]; then
+            echo "No se encontró gradlew, busco carpeta con app/"
+            DIR=$(find _src -type d -name "app" | head -1 | xargs dirname)
+            echo "DIR app: $DIR"
+            cp -r "$DIR"/* . 2>/dev/null || true
+            cp -r "$DIR"/.gradle . 2>/dev/null || true
+          else
+            DIR=$(dirname "$GW")
+            echo "Copiando desde $DIR a raíz"
+            cp -r "$DIR"/* . 2>/dev/null || true
+            cp -r "$DIR"/.* . 2>/dev/null || true
+            cp -r "$DIR"/app . 2>/dev/null || true
+            cp -r "$DIR"/gradle . 2>/dev/null || true
+          fi
           ls -la
+          ls -la app || true
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
+
       - name: Compilar APK
         run: |
-          chmod +x gradlew
+          chmod +x gradlew || true
+          ls -la gradlew
           ./gradlew assembleDebug
+
       - uses: actions/upload-artifact@v4
         with:
           name: Tube-mp3-apk
