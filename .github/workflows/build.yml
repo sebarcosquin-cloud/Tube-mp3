@@ -5,47 +5,25 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Descomprimir zip
+      - name: Descomprimir
         run: |
           ZIP=$(find . -name "*.zip" | head -1)
-          echo "ZIP: $ZIP"
           rm -rf _src
           mkdir _src
           unzip -o "$ZIP" -d _src
-          ls -R _src | head -n 200
-          # copiar todo lo de _src a raíz, buscando carpeta que tenga app/
           ROOT=$(find _src -type d -name "app" | head -1 | xargs dirname)
-          echo "ROOT detectado: $ROOT"
-          if [ -n "$ROOT" ]; then
-            cp -r "$ROOT"/. .
-          else
-            cp -r _src/. .
-          fi
-          ls -la
-          ls -la app || true
-
+          cp -r "$ROOT"/. .
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
-
-      - uses: gradle/actions/setup-gradle@v3
-
       - name: Compilar APK
         run: |
-          if [ -f ./gradlew ]; then
-            chmod +x ./gradlew
-            ./gradlew assembleDebug
-          else
-            echo "No hay gradlew, genero wrapper y compilo con gradle"
-            gradle wrapper --gradle-version 8.5
-            chmod +x ./gradlew
-            ./gradlew assembleDebug
-          fi
-
+          ls -la app
+          gradle --no-daemon assembleDebug
       - uses: actions/upload-artifact@v4
         with:
           name: Tube-mp3-apk
