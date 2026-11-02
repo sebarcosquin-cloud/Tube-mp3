@@ -13,13 +13,10 @@ jobs:
           rm -rf _src
           mkdir _src
           unzip -q -o "$ZIP" -d _src
-          # busca donde esta la app
           ROOT=$(find _src -type d -name "app" | head -1 | xargs dirname)
           echo "Proyecto en: $ROOT"
-          ls "$ROOT"
-          # copia TODO lo del proyecto a la raiz
           cp -rf $ROOT/. .
-          chmod +x ./gradlew 2>/dev/null || echo "no habia gradlew, lo creamos"
+          chmod +x ./gradlew 2>/dev/null || true
           ls -la
       - uses: actions/setup-java@v4
         with:
@@ -27,11 +24,14 @@ jobs:
           java-version: 17
       - name: Compilar APK
         run: |
+          if [ -f "gradle/wrapper/gradle-wrapper.properties" ]; then
+            sed -i "s|distributionUrl.*|distributionUrl=https\\://services.gradle.org/distributions/gradle-9.3.1-bin.zip|" gradle/wrapper/gradle-wrapper.properties
+            cat gradle/wrapper/gradle-wrapper.properties
+          fi
           if [ -f "./gradlew" ]; then
             ./gradlew --no-daemon assembleDebug
           else
-            echo "Creando gradlew..."
-            gradle wrapper --gradle-version 8.5
+            gradle wrapper --gradle-version 9.3.1
             ./gradlew --no-daemon assembleDebug
           fi
       - uses: actions/upload-artifact@v4
