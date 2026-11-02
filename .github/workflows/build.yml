@@ -9,20 +9,31 @@ jobs:
       - uses: actions/checkout@v4
       - name: Descomprimir zip
         run: |
-          ZIP=$(find . -maxdepth 1 -name "*.zip" | head -1)
+          ZIP=$(ls -1 *.zip | head -1)
           rm -rf _src
           mkdir _src
           unzip -q -o "$ZIP" -d _src
-          ROOT=$(find _src -type f -name "settings.gradle.kts" | head -1 | xargs dirname)
-          cp -r $ROOT/. .
-          chmod +x gradlew || true
+          # busca donde esta la app
+          ROOT=$(find _src -type d -name "app" | head -1 | xargs dirname)
+          echo "Proyecto en: $ROOT"
+          ls "$ROOT"
+          # copia TODO lo del proyecto a la raiz
+          cp -rf $ROOT/. .
+          chmod +x ./gradlew 2>/dev/null || echo "no habia gradlew, lo creamos"
           ls -la
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
       - name: Compilar APK
-        run: ./gradlew --no-daemon assembleDebug
+        run: |
+          if [ -f "./gradlew" ]; then
+            ./gradlew --no-daemon assembleDebug
+          else
+            echo "Creando gradlew..."
+            gradle wrapper --gradle-version 8.5
+            ./gradlew --no-daemon assembleDebug
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: Tube-mp3-apk
