@@ -14,19 +14,22 @@ jobs:
           mkdir _src
           unzip -q -o "$ZIP" -d _src
           ROOT=$(find _src -type d -name "app" | head -1 | xargs dirname)
-          echo "Proyecto en: $ROOT"
           cp -rf $ROOT/. .
           chmod +x ./gradlew 2>/dev/null || true
-          ls -la
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
+      - name: Crear keystore que falta
+        run: |
+          keytool -genkeypair -dname "CN=debug, OU=debug, O=debug, L=debug, ST=debug, C=US" -alias androiddebugkey -keystore debug.keystore -storepass android -keypass android -keyalg RSA -validity 10000 -noprompt
+          ls -lh debug.keystore
+          # también lo ponemos en app/
+          cp debug.keystore app/debug.keystore 2>/dev/null || true
       - name: Compilar APK
         run: |
           if [ -f "gradle/wrapper/gradle-wrapper.properties" ]; then
             sed -i "s|distributionUrl.*|distributionUrl=https\\://services.gradle.org/distributions/gradle-9.3.1-bin.zip|" gradle/wrapper/gradle-wrapper.properties
-            cat gradle/wrapper/gradle-wrapper.properties
           fi
           if [ -f "./gradlew" ]; then
             ./gradlew --no-daemon assembleDebug
