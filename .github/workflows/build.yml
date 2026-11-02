@@ -14,20 +14,15 @@ jobs:
           mkdir _src
           unzip -q -o "$ZIP" -d _src
           ROOT=$(find _src -type f -name "settings.gradle.kts" | head -1 | xargs dirname)
-          echo "ROOT $ROOT"
-          cp -r $ROOT/app ./
-          cp -r $ROOT/gradle ./ 2>/dev/null || true
-          cp $ROOT/*.kts ./ 2>/dev/null || true
-          cp $ROOT/*.properties ./ 2>/dev/null || true
+          cp -r $ROOT/. .
+          chmod +x gradlew || true
           ls -la
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
       - name: Compilar APK
-        run: |
-          echo "SDK en $ANDROID_SDK_ROOT"
-          gradle --no-daemon assembleDebug
+        run: ./gradlew --no-daemon assembleDebug
       - uses: actions/upload-artifact@v4
         with:
           name: Tube-mp3-apk
