@@ -5,25 +5,28 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - name: Descomprimir
+      - name: Descomprimir zip
         run: |
-          ZIP=$(find . -name "*.zip" | head -1)
+          ZIP=$(find . -maxdepth 1 -name "*.zip" | head -1)
+          echo "ZIP: $ZIP"
           rm -rf _src
           mkdir _src
-          unzip -o "$ZIP" -d _src
-          ROOT=$(find _src -type d -name "app" | head -1 | xargs dirname)
-          cp -r "$ROOT"/. .
+          unzip -q -o "$ZIP" -d _src
+          ROOT=$(find _src -type f -name "settings.gradle.kts" | head -1 | xargs dirname)
+          echo "ROOT: $ROOT"
+          cp -r $ROOT/. .
+          ls -la
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
       - name: Compilar APK
-        run: |
-          ls -la app
-          gradle --no-daemon assembleDebug
+        run: gradle --no-daemon assembleDebug
       - uses: actions/upload-artifact@v4
         with:
           name: Tube-mp3-apk
